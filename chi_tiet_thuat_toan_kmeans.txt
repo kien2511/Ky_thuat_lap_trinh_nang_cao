@@ -1,0 +1,49 @@
+=====================================================
+GIẢI THÍCH CHI TIẾT THUẬT TOÁN K-MEANS CLUSTERING 
+(Dựa trên mã nguồn file ltnc.py)
+=====================================================
+
+Thuật toán K-Means Clustering (Phân cụm K-Means) là một thuật toán học máy không giám sát (unsupervised learning), được sử dụng để phân chia một tập dữ liệu thành k cụm (clusters) khác nhau dựa trên sự tương đồng (khoảng cách) giữa các điểm dữ liệu.
+
+Mã nguồn trong file `ltnc.py` tự xây dựng (build from scratch) thuật toán này bằng thư viện `numpy` qua các bước chi tiết sau:
+
+TRÌNH TỰ THỰC HIỆN CỦA THUẬT TOÁN:
+
+1. KHỞI TẠO (Initialization)
+   Hàm `__init__` thiết lập các tham số cơ bản cho mô hình:
+   - `k` (`n_clusters`): Số lượng cụm cần tìm (mặc định = 3).
+   - `max_iter`: Số vòng lặp tối đa để tránh thuật toán lặp vô hạn (mặc định = 100).
+   - `tol`: Ngưỡng sai số (tolerance) dùng để dừng thuật toán khi các tâm cụm đã ổn định (mặc định = 0.0001).
+
+   Bắt đầu quá trình huấn luyện bằng hàm `fit(X)`:
+   - Bước Khởi tạo tâm cụm ban đầu: Thuật toán chọn ngẫu nhiên k điểm dữ liệu có sẵn trong tập dữ liệu đầu vào X để làm các tâm cụm ban đầu (centroids).
+
+2. VÒNG LẶP PHÂN CỤM VÀ CẬP NHẬT TÂM (Iterative Process)
+   Thuật toán sẽ chạy vòng lặp lặp đi lặp lại việc gán nhãn và cập nhật tâm cụm tối đa `max_iter` lần. Mỗi vòng lặp gồm 3 bước:
+
+   Bước 2.1: Gán điểm vào cụm gần nhất (Assign clusters)
+   - Với mỗi điểm dữ liệu trong tập X, thuật toán sử dụng phép toán đại số tuyến tính để tính khoảng cách Euclid (đường thẳng ngắn nhất) từ điểm dữ liệu đó đến tất cả k tâm cụm hiện tại.
+     (Mã nguồn: `distances = np.linalg.norm(X[:, np.newaxis] - self.centroids, axis=2)`)
+   - Mỗi điểm dữ liệu sẽ được phân vào cụm có khoảng cách từ điểm đó tới tâm là nhỏ nhất (gần nhất).
+     (Mã nguồn: `labels = np.argmin(distances, axis=1)`)
+
+   Bước 2.2: Tính toán và Cập nhật lại tâm cụm (Update Centroids)
+   - Sau khi tất cả các điểm đã được chia về các cụm, thuật toán tính lại tọa độ trung tâm cho từng cụm.
+   - Vị trí tâm cụm hình học mới chính là trung bình cộng tọa độ của tất cả các điểm dữ liệu đang thuộc về cụm đó.
+     (Mã nguồn: `new_centroids = np.array([X[labels == j].mean(axis=0) for j in range(self.k)])`)
+
+   Bước 2.3: Kiểm tra điều kiện dừng (Convergence Check)
+   - Thuật toán tiến hành so sánh tọa độ của các tâm cụm mới so với tâm cụm cũ ở bước trước. 
+   - Nếu độ dời vị trí của TẤT CẢ các tâm cụm đều nhỏ hơn ngưỡng sai số `tol` (0.0001), điều này có nghĩa là các tâm cụm đã ổn định và không còn xê dịch nữa (Đạt trạng thái hội tụ). 
+   - Thuật toán sẽ chủ động dừng sớm vòng lặp và in ra màn hình vòng lặp bao nhiêu thì hội tụ.
+   - Nếu chưa hội tụ, tâm cụm mới sẽ được lưu lại làm cơ sở cho vòng lặp tiếp theo.
+
+3. DỰ ĐOÁN (Predict)
+   - Hàm `predict(X)` cho phép dự đoán những điểm dữ liệu mới tinh sẽ thuộc vào nhóm nào. Thuật toán đơn giản là lấy điểm dữ liệu đó tính khoảng cách đến k tâm cụm cuối cùng đã chốt được ở hàm `fit()`, khoảng cách tới tâm nào nhỏ nhất thì phần tử sẽ nhận nhãn của tâm đó.
+
+-----------------------------------------------------
+TÓM LẠI - LUỒNG XỬ LÝ:
+[1. Chọn ngẫu nhiên K tâm cụm] 
+    --> [2. Tính khoảng cách và gán mỗi điểm vào tâm gần nhất] 
+    --> [3. Tính lại vị trí tâm (chuyển tâm vào trung bình của các điểm trong cụm)] 
+    --> [4. Lặp lại bước 2 và 3 thực hiện cho tới khi tâm cụm không thay đổi nữa].

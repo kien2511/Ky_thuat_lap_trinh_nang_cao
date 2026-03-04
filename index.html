@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Means Clustering</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            /* Blue 600 */
+            --primary-hover: #1d4ed8;
+            /* Blue 700 */
+            --bg-color: #f8fafc;
+            /* Slate 50 */
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            /* Slate 800 */
+            --text-secondary: #64748b;
+            /* Slate 500 */
+            --border-color: #e2e8f0;
+            /* Slate 200 */
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            align-items: flex-start;
+        }
+
+        /* Controls Section */
+        .controls-card {
+            flex: 1;
+            min-width: 300px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .control-value {
+            font-family: monospace;
+            background: #eff6ff;
+            color: var(--primary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .btn-run {
+            display: block;
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-run:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-run:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        /* Visualization Section */
+        .visual-card {
+            flex: 2;
+            min-width: 400px;
+            background: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #result-image {
+            max-width: 100%;
+            height: auto;
+            display: none;
+        }
+
+        .placeholder {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .placeholder svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .controls-card,
+            .visual-card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>K-Means Clustering</h1>
+        <p>Interactive Visualization Tool</p>
+    </div>
+
+    <div class="main-container">
+        <!-- Controls -->
+        <div class="controls-card">
+            <div class="control-group">
+                <div class="control-header">
+                    <label class="control-label">Clusters (K)</label>
+                    <span class="control-value" id="k-val">3</span>
+                </div>
+                <input type="range" id="n_clusters" min="2" max="10" value="3"
+                    oninput="document.getElementById('k-val').innerText = this.value">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <label class="control-label">Total Samples</label>
+                    <span class="control-value" id="n-val">300</span>
+                </div>
+                <input type="range" id="n_samples" min="50" max="1000" step="50" value="300"
+                    oninput="document.getElementById('n-val').innerText = this.value">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <label class="control-label">Spread (Std Dev)</label>
+                    <span class="control-value" id="std-val">1.0</span>
+                </div>
+                <!-- 0.1 to 3.0 -->
+                <input type="range" id="cluster_std" min="0.1" max="3.0" step="0.1" value="1.0"
+                    oninput="document.getElementById('std-val').innerText = this.value">
+            </div>
+
+            <button class="btn-run" onclick="runAlgorithm()">Run Algorithm</button>
+        </div>
+
+        <!-- Visualization -->
+        <div class="visual-card">
+            <div class="spinner" id="loader"></div>
+
+            <div class="placeholder" id="placeholder-content">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                </svg>
+                <p>Click "Run Algorithm" to generate clusters</p>
+            </div>
+
+            <img id="result-image" src="" alt="Clustering Result">
+        </div>
+    </div>
+
+    <script>
+        async function runAlgorithm() {
+            // Get values
+            const n_clusters = document.getElementById('n_clusters').value;
+            const n_samples = document.getElementById('n_samples').value;
+            const cluster_std = document.getElementById('cluster_std').value;
+
+            // UI Elements
+            const loader = document.getElementById('loader');
+            const img = document.getElementById('result-image');
+            const placeholder = document.getElementById('placeholder-content');
+            const btn = document.querySelector('.btn-run');
+
+            // Reset State
+            img.style.display = 'none';
+            placeholder.style.display = 'none';
+            loader.style.display = 'block';
+            btn.disabled = true;
+            btn.innerText = 'Running...';
+
+            try {
+                const response = await fetch('/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        n_clusters: n_clusters,
+                        n_samples: n_samples,
+                        cluster_std: cluster_std
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    // Slight delay to ensure smooth transition perception if it's too fast
+                    img.src = 'data:image/png;base64,' + data.image;
+                    img.style.display = 'block';
+                } else {
+                    alert('Error: ' + data.message);
+                    placeholder.style.display = 'block';
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Connection error');
+                placeholder.style.display = 'block';
+            } finally {
+                loader.style.display = 'none';
+                btn.disabled = false;
+                btn.innerText = 'Run Algorithm';
+            }
+        }
+    </script>
+</body>
+
+</html>
